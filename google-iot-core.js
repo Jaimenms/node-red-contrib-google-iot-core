@@ -406,11 +406,6 @@ module.exports = function (RED) {
         this.subfolder = n.subfolder;
         this.brokerConn = RED.nodes.getNode(this.broker);
 
-        if (this.subfolder) {
-            this.topic = '/devices/' + this.brokerConn.deviceid + '/events/' + this.subfolder;
-        } else {
-            this.topic = '/devices/' + this.brokerConn.deviceid + '/events';
-        }
         var node = this;
 
         if (this.brokerConn) {
@@ -425,9 +420,14 @@ module.exports = function (RED) {
                 msg.qos = Number(node.qos || msg.qos || 0);
                 msg.retain = node.retain || msg.retain || false;
                 msg.retain = ((msg.retain === true) || (msg.retain === "true")) || false;
-                if (node.topic) {
-                    msg.topic = node.topic;
+                msg.subfolder = node.subfolder || msg.subfolder || "";
+                
+                if (msg.subfolder) {
+                    msg.topic = '/devices/' + node.brokerConn.deviceid + '/events/' + msg.subfolder;
+                } else {
+                    msg.topic = '/devices/' + node.brokerConn.deviceid + '/events';
                 }
+
                 if (msg.hasOwnProperty("payload")) {
                     if (msg.hasOwnProperty("topic") && (typeof msg.topic === "string") && (msg.topic !== "")) { // topic must exist
                         this.brokerConn.publish(msg);  // send the message
