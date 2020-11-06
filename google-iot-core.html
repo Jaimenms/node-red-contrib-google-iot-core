@@ -13,6 +13,77 @@
   Modifications Copyright 2017 Sense Tecnic Systems, Inc.
 -->
 
+<script type="text/x-red" data-template-name="google-iot-core commands">
+    <div class="form-row">
+        <label for="node-input-broker"><i class="fa fa-globe"></i> <span data-i18n="google-iot-core.label.broker"></span></label>
+        <input type="text" id="node-input-broker">
+    </div>
+    <div class="form-row">
+        <label for="node-input-qos"><i class="fa fa-empire"></i> <span data-i18n="google-iot-core.label.qos"></span></label>
+        <select id="node-input-qos" style="width:125px !important">
+            <option value="0">0</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+        </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="google-iot-core.label.name"></span></label>
+        <input type="text" id="node-input-name" data-i18n="[placeholder]google-iot-core.label.name">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="google-iot-core commands">
+<p>Connects to Google IoT core MQTT broker and subscribes to messages from the /devices/&lt;DeviceID&gt;/commands/# topic backed by a persistent
+message store.</p>
+    <h3>Outputs</h3>
+    <dl class="message-properties">
+       <dt>payload <span class="property-type">string | buffer</span></dt>
+       <dd>a string unless detected as a binary buffer.</dd>
+       <dt>qos <span class="property-type">number</span> </dt>
+       <dd>0, fire and forget - 1, at least once - 2, once and once only.</dd>
+       <dt>retain <span class="property-type">boolean</span></dt>
+       <dd>true indicates the message was retained and may be old.</dd>
+    </dl>
+    <h3>Details</h3>
+    <p>This node requires a connection to a MQTT broker to be configured. This is configured by clicking
+    the pencil icon.</p>
+    <p>Several MQTT nodes (in or out) can share the same broker connection if required.</p>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('google-iot-core commands',{
+        category: 'google iot core',
+        defaults: {
+            name: {value:""},
+            qos: {value: "2"},
+            broker: {type:"google-iot-core-broker", required:true}
+        },
+        color:"#AAAA66",
+        inputs:0,
+        outputs:1,
+        icon: "bridge.png",
+        label: function() {
+            return this.name||"google-iot-core commands";
+        },
+        labelStyle: function() {
+            return this.name?"node_label_italic":"";
+        },
+        oneditprepare: function() {
+            if (this.qos === undefined) {
+                $("#node-input-qos").val("2");
+            }
+        },
+        oneditprepare: function() {
+            if (this.subfolder === undefined) {
+                $("#node-input-subfolder").val("");
+            }
+        }
+    });
+</script>
+
+
+
+
 <script type="text/x-red" data-template-name="google-iot-core in">
     <div class="form-row">
         <label for="node-input-broker"><i class="fa fa-globe"></i> <span data-i18n="google-iot-core.label.broker"></span></label>
@@ -52,7 +123,7 @@ message store.</p>
 
 <script type="text/javascript">
     RED.nodes.registerType('google-iot-core in',{
-        category: 'input',
+        category: 'google iot core',
         defaults: {
             name: {value:""},
             qos: {value: "2"},
@@ -63,7 +134,7 @@ message store.</p>
         outputs:1,
         icon: "bridge.png",
         label: function() {
-            return this.name||"google-iot-core";
+            return this.name||"google-iot-core in";
         },
         labelStyle: function() {
             return this.name?"node_label_italic":"";
@@ -143,7 +214,7 @@ message store.</p>
 
 <script type="text/javascript">
     RED.nodes.registerType('google-iot-core out',{
-        category: 'output',
+        category: 'google iot core',
         defaults: {
             name: {value:""},
             subfolder: {value:""},
@@ -157,13 +228,93 @@ message store.</p>
         icon: "bridge.png",
         align: "right",
         label: function() {
-            return this.name||"google-iot-core";
+            return this.name||"google-iot-core out";
         },
         labelStyle: function() {
             return this.name?"node_label_italic":"";
         }
     });
 </script>
+
+
+<script type="text/x-red" data-template-name="google-iot-core state">
+    <div class="form-row">
+        <label for="node-input-broker"><i class="fa fa-globe"></i> <span data-i18n="google-iot-core.label.broker"></span></label>
+        <input type="text" id="node-input-broker">
+    </div>
+    <div class="form-row">
+        <label for="node-input-qos"><i class="fa fa-empire"></i> <span data-i18n="google-iot-core.label.qos"></span></label>
+        <select id="node-input-qos" style="width:125px !important">
+            <option value=""></option>
+            <option value="0">0</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+        </select>
+        &nbsp;&nbsp;<i class="fa fa-history"></i>&nbsp;<span data-i18n="google-iot-core.retain"></span> &nbsp;<select id="node-input-retain" style="width:125px !important">
+            <option value=""></option>
+            <option value="false" data-i18n="google-iot-core.false"></option>
+            <option value="true" data-i18n="google-iot-core.true"></option>
+        </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="google-iot-core.label.name"></span></label>
+        <input type="text" id="node-input-name" data-i18n="[placeholder]google-iot-core.label.name">
+    </div>
+    <div class="form-tips"><span data-i18n="google-iot-core.tip"></span></div>
+</script>
+
+<script type="text/x-red" data-help-name="google-iot-core state">
+<p>Connects to Google IoT core MQTT broker and subscribes to messages from the /devices/&lt;DeviceID&gt;/state topic backed by a persistent
+message store.</p>
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+       <dt>payload <span class="property-type">string | buffer</span></dt>
+       <dd> most users prefer simple text payloads, but binary buffers can also be published.</dd>
+
+       <dt class="optional">qos <span class="property-type">number</span></dt>
+       <dd>0, fire and forget - 1, at least once - 2, once and once only. Default 0.</dd>
+
+       <dt class="optional">retain <span class="property-type">boolean</span></dt>
+       <dd>set to true to retain the message on the broker. Default false.</dd>
+
+    </dl>
+    <h3>Details</h3>
+    <code>msg.payload</code> is used as the payload of the published message.
+    If it contains an Object it will be converted to a JSON string before being sent.
+    If it contains a binary Buffer the message will be published as-is.</p>
+    <p>Likewise the QoS and retain values can be configured in the node or, if left
+    blank, set by <code>msg.qos</code> and <code>msg.retain</code> respectively. To clear a previously
+    retained topic from the broker, send a blank message to that topic with the retain flag set.</p>
+    <p>This node requires a connection to a MQTT broker to be configured. This is configured by clicking
+    the pencil icon.</p>
+    <p>Several MQTT nodes (in or out) can share the same broker connection if required.</p>
+</script>
+
+
+<script type="text/javascript">
+    RED.nodes.registerType('google-iot-core state',{
+        category: 'google iot core',
+        defaults: {
+            name: {value:""},
+            qos: {value:""},
+            retain: {value:""},
+            broker: {type:"google-iot-core-broker", required:true}
+        },
+        color:"#AAAA66",
+        inputs:1,
+        outputs:0,
+        icon: "bridge.png",
+        align: "right",
+        label: function() {
+            return this.name||"google-iot-core state";
+        },
+        labelStyle: function() {
+            return this.name?"node_label_italic":"";
+        }
+    });
+</script>
+
+
 
 <script type="text/x-red" data-template-name="google-iot-core-broker">
     <div class="form-row">

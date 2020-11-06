@@ -398,6 +398,47 @@ module.exports = function (RED) {
     RED.nodes.registerType("google-iot-core-broker", MQTTBrokerNode, {
     });
 
+    function MQTTCommandsNode(n) {
+        RED.nodes.createNode(this, n);
+        this.qos = parseInt(n.qos);
+        if (isNaN(this.qos) || this.qos < 0 || this.qos > 1) {
+            this.qos = 1;
+        }
+        this.broker = n.broker;
+        this.brokerConn = RED.nodes.getNode(this.broker);
+        this.topic = '/devices/' + this.brokerConn.deviceid + '/commands/#';
+        var node = this;
+        if (this.brokerConn) {
+            this.status({ fill: "red", shape: "ring", text: "node-red:common.status.disconnected" });
+            if (this.topic) {
+                node.brokerConn.register(this);
+                this.brokerConn.subscribe(this.topic, this.qos, function (topic, payload, packet) {
+                    if (isUtf8(payload)) { payload = payload.toString(); }
+                    var msg = { topic: topic, payload: payload, qos: packet.qos, retain: packet.retain };
+                    if ((node.brokerConn.broker === "localhost") || (node.brokerConn.broker === "127.0.0.1")) {
+                        msg._topic = topic;
+                    }
+                    node.send(msg);
+                }, this.id);
+                if (this.brokerConn.connected) {
+                    node.status({ fill: "green", shape: "dot", text: "node-red:common.status.connected" });
+                }
+            }
+            else {
+                this.error(RED._("google-iot-core.errors.not-defined"));
+            }
+            this.on('close', function (done) {
+                if (node.brokerConn) {
+                    node.brokerConn.unsubscribe(node.topic, node.id);
+                    node.brokerConn.deregister(node, done);
+                }
+            });
+        } else {
+            this.error(RED._("google-iot-core.errors.missing-config"));
+        }
+    }
+    RED.nodes.registerType("google-iot-core commands", MQTTCommandsNode);
+
     function MQTTOutNode(n) {
         RED.nodes.createNode(this, n);
         this.qos = n.qos || null;
@@ -447,4 +488,50 @@ module.exports = function (RED) {
         }
     }
     RED.nodes.registerType("google-iot-core out", MQTTOutNode);
+
+    function MQTTStateNode(n) {
+        RED.nodes.createNode(this, n);
+        this.qos = n.qos || null;
+        this.retain = n.retain;
+        this.broker = n.broker;
+        this.subfolder = n.subfolder;
+        this.brokerConn = RED.nodes.getNode(this.broker);
+
+        var node = this;
+
+        if (this.brokerConn) {
+            this.status({ fill: "red", shape: "ring", text: "node-red:common.status.disconnected" });
+            this.on("input", function (msg) {
+                if (msg.qos) {
+                    msg.qos = parseInt(msg.qos);
+                    if ((msg.qos !== 0) && (msg.qos !== 1)) {
+                        msg.qos = null;
+                    }
+                }
+                msg.qos = Number(node.qos || msg.qos || 0);
+                msg.retain = node.retain || msg.retain || false;
+                msg.retain = ((msg.retain === true) || (msg.retain === "true")) || false;
+
+                msg.topic = '/devices/' + node.brokerConn.deviceid + '/state';
+
+                if (msg.hasOwnProperty("payload")) {
+                    if (msg.hasOwnProperty("topic") && (typeof msg.topic === "string") && (msg.topic !== "")) { // topic must exist
+                        this.brokerConn.publish(msg);  // send the message
+                    }
+                    else { node.warn(RED._("google-iot-core.errors.invalid-topic")); }
+                }
+            });
+            if (this.brokerConn.connected) {
+                node.status({ fill: "green", shape: "dot", text: "node-red:common.status.connected" });
+            }
+            node.brokerConn.register(node);
+            this.on('close', function (done) {
+                node.brokerConn.deregister(node, done);
+            });
+        } else {
+            this.error(RED._("google-iot-core.errors.missing-config"));
+        }
+    }
+    RED.nodes.registerType("google-iot-core state", MQTTStateNode);
+
 };
